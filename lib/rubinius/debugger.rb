@@ -325,6 +325,7 @@ class Rubinius::Debugger
                                 line, @deferred_breakpoints)
     @deferred_breakpoints << dbp
     @breakpoints << dbp
+    dbp
   end
 
   def check_deferred_breakpoints

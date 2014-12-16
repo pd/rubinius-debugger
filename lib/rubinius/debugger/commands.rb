@@ -141,7 +141,7 @@ The breakpoint will be triggered only when the evaluation of the specified condi
           klass = run_code(klass_name)
         rescue NameError
           error "Unable to find class/module: #{m[1]}"
-          ask_deferred klass_name, which, name, line
+          ask_deferred klass_name, which, name, line, condition
           return
         end
 
@@ -153,22 +153,23 @@ The breakpoint will be triggered only when the evaluation of the specified condi
           end
         rescue NameError
           error "Unable to find method '#{name}' in #{klass}"
-          ask_deferred klass_name, which, name, line
+          ask_deferred klass_name, which, name, line, condition
           return
         end
 
-        bp = @debugger.set_breakpoint_method args.strip, method, line, condition
+        bp = @debugger.set_breakpoint_method args.strip, method, line
 
         bp.set_temp! if temp
 
         return bp
       end
 
-      def ask_deferred(klass_name, which, name, line)
+      def ask_deferred(klass_name, which, name, line, condition)
         answer = ask "Would you like to defer this breakpoint to later? [y/n] "
 
         if answer.strip.downcase[0] == ?y
-          @debugger.add_deferred_breakpoint(klass_name, which, name, line)
+          dbp = @debugger.add_deferred_breakpoint(klass_name, which, name, line)
+          dbp.set_condition(condition)
           info "Deferred breakpoint created."
         end
       end
