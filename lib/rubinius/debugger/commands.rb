@@ -67,6 +67,14 @@ class Rubinius::Debugger
       @debugger.listen(step)
     end
 
+    def state_file(args)
+      if args and !args.strip.empty?
+        File.expand_path(args.strip)
+      else
+        File.expand_path('~/.rbx_debug.state')
+      end
+    end
+
     # ===== Commands =====
     #
     # These classes are in the order they should appear in the help output.
@@ -640,6 +648,51 @@ The optional argument is which variable specificly to show the value of.
           end
         end
 
+      end
+    end
+
+    class Save < Command
+      pattern "save"
+      help "Save current breakpoints to a file"
+      ext_help <<-HELP
+Saves breakpoints to a file, defaulting to ~/.rbx_debug.state.
+Existing contents will be overwritten.
+Pass an alternate filename as the first argument.
+      HELP
+
+      def run(args)
+        File.open(state_file(args), 'w') do |f|
+          @debugger.breakpoints.each_with_index do |bp, i|
+            f.puts "breakpoint #{bp.descriptor}"
+            f.puts "commands #{i+1} #{bp.commands}" if bp.has_commands?
+          end
+        end
+      end
+    end
+
+    class Load < SetBreakPoint
+      pattern "load"
+      help "Load breakpoints from a file"
+      ext_help <<-HELP
+Load breakpoints from a file, defaulting to ~/.rbx_debug.state.
+Pass an alternate filename as the first argument.
+      HELP
+
+      def run(args)
+        File.readlines(state_file(args)).each do |line|
+          if match = line.match(/^breakpoint (.+)$/)
+            super(match[1])
+          elsif match = line.match(/^commands (\d+) (.+)$/)
+            index = Integer(match[1]) - 1
+            @debugger.breakpoints[index].set_commands(match[2])
+          end
+        end
+      end
+
+      def ask_deferred(klass_name, which, name, line, condition)
+        dbp = @debugger.add_deferred_breakpoint(klass_name, which, name, line)
+        dbp.set_condition(condition)
+        info "Deferred breakpoint #{klass_name}#{which}#{name} created."
       end
     end
 

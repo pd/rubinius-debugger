@@ -111,7 +111,8 @@ class Rubinius::Debugger
     attr_reader :condition, :commands
 
     def descriptor
-      "#{@klass_name}#{@which}#{@name}"
+      condition = has_condition? ? " if #{@condition}" : nil
+      "#{@klass_name}#{@which}#{@name}#{condition}"
     end
 
     def resolve!
